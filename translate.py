@@ -157,6 +157,27 @@ class BGP(object):
                 # print("* Warning line skipped: %s" % l.strip("\n"))
                 pass
 
+class VRF(object):
+    def __init__(self,lines):
+        self.name = ""
+        for l in lines:
+            r1 = re.match("vrf (\S+)",l)
+            if r1:
+                self.name = r1.group(1)
+            else:
+                # print("* Warning line skipped: %s" % l.strip("\n"))
+                pass
+
+class NTP(object):
+    def __init__(self,lines):
+        self.name = ""
+        for l in lines:
+            r1 = re.match("ntp",l)
+            if r1:
+                self.name = ""
+            else:
+                # print("* Warning line skipped: %s" % l.strip("\n"))
+                pass
 
 class OSPF(object):
     def __init__(self,lines):
@@ -202,7 +223,7 @@ if __name__ == "__main__":
             if in_block == 0:
                 chunk = []
                 # Create object for the following group of commands
-                r1 = re.match("^(vlan|interface|snmp|router ospf|ipv6 router ospf|lag|router bgp).*", line)
+                r1 = re.match("^(vlan|interface|snmp|router ospf|ipv6 router ospf|lag|router bgp|vrf|ntp).*", line)
                 # Print a warning for this statements
                 r2 = re.match("(ip access-list|ipv6 access-list|route-map|aaa authentication|aaa authorization|radius-server|clock) .*", line)
                 if r1:
