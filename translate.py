@@ -25,7 +25,8 @@ class VLAN(object):
             elif r3:
                 self.l3iface = r3.group(1)
             else:
-                print("* Warning line skipped: %s" % l.strip("\n"))
+                # print("* Warning line skipped: %s" % l.strip("\n"))
+                pass
 
     def __repr__(self):
         return "vlan %s (%s) l3interface: %s" % (self.id, self.name, self.l3iface)
@@ -69,7 +70,8 @@ class VE(object):
             elif r8:
                 self.pim = 1
             else: 
-                print("* Warning line skipped: %s" % l.strip("\n"))
+                # print("* Warning line skipped: %s" % l.strip("\n"))
+                pass
 
     def __repr__(self):
         return "ve %s (%s) ipaddress: %s" % (self.id, self.name, self.ipaddress)
@@ -101,7 +103,8 @@ class INTERFACE(object):
                 elif "enable" in l:
                     self.enabled = 1
                 else: 
-                    print("* Warning line skipped: %s" % l.strip("\n"))
+                    # print("* Warning line skipped: %s" % l.strip("\n"))
+                    pass
 
     def __repr__(self):
         return "interface %s (%s)"  % (self.port, self.name)
@@ -137,10 +140,23 @@ class LAG(object):
             elif r4:
                 self.deployed = 1
             else:
-                print("* Warning line skipped: %s" % l.strip("\n"))
+                # print("* Warning line skipped: %s" % l.strip("\n"))
+                pass
 
     def __repr__(self):
         return "lag %s (primary %s) ports: %s"  % (self.lagid, self.primary, self.ports)
+
+class BGP(object):
+    def __init__(self,lines):
+        self.las = 0
+        for l in lines:
+            r1 = re.match("\s*local-as (\S+)",l)
+            if r1:
+                self.las = r1.group(1)
+            else:
+                # print("* Warning line skipped: %s" % l.strip("\n"))
+                pass
+
 
 class OSPF(object):
     def __init__(self,lines):
@@ -185,15 +201,14 @@ if __name__ == "__main__":
         for line in f:
             if in_block == 0:
                 chunk = []
-                # Create object for the following groups
-                r1 = re.match("^(vlan|interface|snmp|router ospf|ipv6 router ospf|lag).*", line)
-                r2 = re.match("(ip access-list|ipv6 access-list|route-map statics|aaa authentication|aaa authorization|radius-server|clock|route-map statics6) .*", line)
+                # Create object for the following group of commands
+                r1 = re.match("^(vlan|interface|snmp|router ospf|ipv6 router ospf|lag|router bgp).*", line)
+                # Print a warning for this statements
+                r2 = re.match("(ip access-list|ipv6 access-list|route-map|aaa authentication|aaa authorization|radius-server|clock) .*", line)
                 if r1:
-                    # Create an object and process further
                     in_block = 1
                     chunk.append(line)
                 elif r2:
-                    # Print a warning for this statements
                     in_block = 2
                     chunk.append(line)
                 else:
