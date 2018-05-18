@@ -4,9 +4,7 @@ import re
 import sys
 
 class VLAN(object):
-	"""
-		Creates a VLAN object
-	"""
+    """ Creates a VLAN object """
     def __init__(self, lines):
         self.id = 0
         self.name = ""
@@ -33,9 +31,7 @@ class VLAN(object):
         return "vlan %s (%s) l3interface: %s" % (self.id, self.name, self.l3iface)
 
 class VE(object):
-    """
-        Create a VE object
-    """
+    """ Create a VE object """
     def __init__(self, lines):
         self.id = 0
         self.name = ""
@@ -55,6 +51,7 @@ class VE(object):
             r5 = re.match("\s+ip address (\S+)", l)
             r6 = re.match("\s+ipv6 address (\S+)", l)
             r7 = re.match("\s+ip helper-address (\S+)", l)
+            r8 = re.match("\s+ip pim-sparse", l)
             if r1:
                 self.id = r1.group(1)
             elif r2:
@@ -69,6 +66,8 @@ class VE(object):
                 self.ip6address.append(r6.group(1))
             elif r7:
                 self.helper.append(r7.group(1))
+            elif r8:
+                self.pim = 1
             else: 
                 print("* Warning line skipped: %s" % l.strip("\n"))
 
@@ -76,9 +75,7 @@ class VE(object):
         return "ve %s (%s) ipaddress: %s" % (self.id, self.name, self.ipaddress)
 
 class INTERFACE(object):
-	"""
-		Creates an INTERFACE object
-	"""
+    """ Creates a physical INTERFACE object """
     def __init__(self, lines):
         self.port = ""
         self.name = ""
@@ -118,6 +115,27 @@ class SNMP(object):
     def __repr__(self):
         return "snmp community %s, location %s" % (self.community, self.location)
 
+class OSPF(object):
+    def __init__(self,lines):
+        self.version = 2 # default version 2
+        self.graceful = 0
+        self.area = []
+        self.log = 0
+        for l in lines:
+            r1 = re.match("area (\S+)", l)
+            r2 = re.match("\s+graceful-restart", l)
+            r3 = re.match("\s+log adjacency", l)
+            if "ipv6 router ospf" in l:
+                self.version = 3
+            elif r1:
+                self.area.append(r1.group(1))
+            elif r2:
+                self.graceful = 1
+            elif r3:
+                self.log = 1
+            else: 
+                print("* Warning line skipped: %s" % l.strip("\n"))
+
 def process_chunk(chunk):
     line = chunk[0]
     if "vlan" in line:
@@ -141,7 +159,7 @@ if __name__ == "__main__":
             if in_block == 0:
                 chunk = []
                 # Create object for the following groups
-                r1 = re.match("^(vlan|interface|snmp).*", line)
+                r1 = re.match("^(vlan|interface|snmp|router ospf|ipv6 router ospf).*", line)
                 r2 = re.match("(ip access-list|ipv6 access-list|route-map statics|aaa authentication|aaa authorization|radius-server|clock|route-map statics6) .*", line)
                 if r1:
                     # Create an object and process further
