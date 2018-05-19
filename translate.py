@@ -2,6 +2,7 @@
 
 import re
 import sys
+import json
 
 class VLAN(object):
     """ Creates a VLAN object """
@@ -11,10 +12,12 @@ class VLAN(object):
         self.l3iface = ""
         self.modes = []
         self.ports = []
+        self.loop = 0
         for l in lines:
             r1 = re.match("^vlan (\d+) name (\S+)", l)
             r2 = re.match("\s+(untagged|tagged) ethe (\S+)", l)
             r3 = re.match("\s+router-interface ve (\S+)", l)
+            r4 = re.match("\s+loop-detection", l)
             if r1:
                 self.id = r1.group(1)
                 self.name = r1.group(2)
@@ -24,6 +27,8 @@ class VLAN(object):
                 self.ports.append(r2.group(2))
             elif r3:
                 self.l3iface = r3.group(1)
+            elif r4:
+                self.loop = 1
             else:
                 # print("* Warning line skipped: %s" % l.strip("\n"))
                 pass
@@ -200,6 +205,14 @@ class OSPF(object):
             else: 
                 print("* Warning line skipped: %s" % l.strip("\n"))
 
+def is_ignored_command(line):
+    
+    for ic in ignored_commands:
+        # Ignore commands should be partial or full commands                
+        if ic in line:
+            return True
+    return False
+
 def process_chunk(chunk):
     line = chunk[0]
     if "vlan" in line:
@@ -214,15 +227,29 @@ def process_chunk(chunk):
     elif "snmp-server" in line:
         snmp = SNMP(chunk)
 
+#
+# main
+# 
 if __name__ == "__main__":
     in_block = 0
-    file = "example2.conf"
+
+    input_file = "example2.conf"
+    ignore_file = "ignore.json"
+
+    # Read commands to be ignored
+    with open(ignore_file) as f:
+        ignored_commands = json.load(f)
+
     commands = []
-    with open(file) as f:
+    with open(input_file) as f:
         for line in f:
+
+            if is_ignored_command(line):
+                continue
+
             if in_block == 0:
                 chunk = []
-                # Create object for the following group of commands
+                # Create object for the following group of commands till the !
                 r1 = re.match("^(vlan|interface|snmp|router ospf|ipv6 router ospf|lag|router bgp|vrf|ntp).*", line)
                 # Print a warning for this statements
                 r2 = re.match("(ip access-list|ipv6 access-list|route-map|aaa authentication|aaa authorization|radius-server|clock) .*", line)
@@ -234,32 +261,7 @@ if __name__ == "__main__":
                     chunk.append(line)
                 else:
                     # One to One mapping for the following commands
-                    o1 = re.match("ip router-id (\S+)", line)
-                    o2 = re.match("ip dns domain-name (\S+)", line)
-                    o3 = re.match("ip dns server-address (.*)", line)
-                    o4 = re.match("no ip icmp redirects", line)
-                    o5 = re.match("ip arp-age (\S+)", line)
-                    o6 = re.match("no ip source-route", line)
-                    # This commands will be simply ignored
-                    r3 = re.match("(ip ssh|acl-policy|ver|module|no route-only|cpu-usage|qos queue-type|ip tcp burst-normal|ipv6 enable-acl-cam-sharing|no spanning-tree| no dual-mode-default-vlan|system-max|banner).*", line)
-
-                    if o1:
-                        commands.append("set system router-id %s" % o1.group(1))
-                    elif o2:
-                        commands.append("set system dns %s" % o2.group(1))
-                    elif o3:
-                        commands.append("set system dns %s" % o3.group(1))
-                    elif o4:
-                        commands.append("set system no-icmp-redirects")
-                        commands.append("set system no-ipv6-icmp-redirects")
-                    elif o5:
-                        commands.append("set system arp-age")
-                    elif o6:
-                        commands.append("set system no-source-route")
-                    elif r3:
-                        pass
-                    else:
-                        print("* Warning global line skipped: %s" % line.strip("\n"))
+                    print("* Warning global line skipped: %s" % line.strip("\n"))
             else:
                 if "!" in line:
                     if in_block == 1:
