@@ -35,7 +35,7 @@ class OSPF(object):
                 data = "%s,%s,%s" % (r5.group(2), r5.group(3), cost)
                 self.summary[r5.group(1)].append(data)
             else: 
-                print("* Warning line skipped: %s" % l.strip("\n"))
+                print("* Warning line skipped in ospf: %s" % l.strip("\n"))
 
     def __repr__(self):
         return "ospf version %s areas: %s"  % (self.version, self.area)
