@@ -205,16 +205,7 @@ class OSPF(object):
             else: 
                 print("* Warning line skipped: %s" % l.strip("\n"))
 
-def is_ignored_command(line):
-    
-    for ic in ignored_commands:
-        # Ignore commands should be partial or full commands                
-        if ic in line:
-            return True
-    return False
-
 def process_line_config(line):
-
     return True
 
 def process_chunk(chunk):
@@ -231,6 +222,38 @@ def process_chunk(chunk):
     elif "snmp-server" in line:
         snmp = SNMP(chunk)
 
+def is_ignored_command(line):   
+    for ic in ignored_commands:
+        # Ignore commands should be partial or full commands                
+        if ic in line:
+            return True
+    return False
+
+def is_one_to_one(line):
+
+    r1 = re.match("hostname (\S+)", line)
+    r2 = re.match("ip arp-age (\d+)", line)
+    r3 = re.match("no ip icmp redirects", line)
+    r4 = re.match("ip dns domain-name (\S+)", line)
+    r5 = re.match("username (\S+)( privilege (\d+)){0,1} password 8 .*", line)
+    if r1:
+        commands.append("set system host-name %s" % r1.group(1))
+    elif r2:
+        commands.append("set system arp aging-timer %s" % r2.group(1))
+    elif r3:
+        commands.append("set system no-redirects")
+    elif r4:
+        commands.append("set system domain-name %s" % r4.group(1))
+    elif r5:
+        commands.append("set system login user %s full-name %s" % (r5.group(1),r5.group(1)))
+        if r5.group(2) == "":
+            commands.append("set system login user %s class super-user" % r5.group(1))        
+        else:
+            commands.append("set system login user %s class operator" % r5.group(1))        
+    else:
+        return False
+    return True
+
 #
 # ---------------------------------------------------
 # main
@@ -238,6 +261,7 @@ def process_chunk(chunk):
 # 
 if __name__ == "__main__":
 
+    commands = []
     input_file = "example2.conf"
     ignore_file = "ignore.json"
     interface_file = "interfaces.json"
@@ -260,20 +284,31 @@ if __name__ == "__main__":
             if is_ignored_command(line):
                 continue
 
+            if is_one_to_one(line):
+                continue
+
             if in_block == 0:
+
+                if "!" in line:
+                    continue
+
                 chunk = []
-                # Create an object for the following group of commands till the exclamantion mark !
+                # Different type of parsing:
+                #   0) Commands to be ignored (is_ignored_command) above
+                #   1) Group of commands indented ended by '!'
+                #   2) Group of commands non-indented (multiple lines)
+                #   3) Group of commands to be ignored by printing a warning message
+                #   4) Commands to be translated one by one (above)
                 r1 = re.match("^(vlan|interface|snmp|router ospf|ipv6 router ospf|lag|router bgp|vrf|ntp).*", line)
-                # Print a warning for this statements
-                r2 = re.match("(ip access-list|ipv6 access-list|route-map|aaa authentication|aaa authorization|radius-server|clock) .*", line)
-                r3 = re.match("(lldp|test).*", line)
+                r2 = re.match("(lldp|ip route|ipv6 route|ip prefix-list|ipv6 prefix-list).*", line)
+                r3 = re.match("(ip access-list|ipv6 access-list|route-map|aaa authentication|aaa authorization|radius-server|clock) .*", line)
                 if r1:
                     in_block = 1
                     chunk.append(line)
-                elif r2:
+                elif r3:
                     in_block = 2
                     chunk.append(line)
-                elif r3:
+                elif r2:
                     # Configuration given by a set of lines (no indentation)
                     process_line_config(line)
                 else:
