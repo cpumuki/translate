@@ -16,9 +16,8 @@ class OSPF(object):
             r2 = re.match("\s+graceful-restart", l)
             r3 = re.match("\s+log adjacency", l)
             r4 = re.match("\s+area (\S+) range (\S+) (\S+) (advertise cost (\d+))", l)
-            if "router ospf" in l:
-                self.version = 2
-            elif "ipv6 router ospf" in l:
+            r5 = re.match("\s+area (\S+) range (\S+)\/(\d+) advertise cost (\d+)", l)
+            if "ipv6 router ospf" in l:
                 self.version = 3
             elif r1:
                 self.area.append(r1.group(1))
@@ -31,6 +30,10 @@ class OSPF(object):
                 a,b,c = r4.group(4).split(" ")
                 data = "%s,%s,%s" % (r4.group(2), r4.group(3), c)
                 self.summary[r4.group(1)].append(data)
+            elif r5:
+                cost = r5.group(4)
+                data = "%s,%s,%s" % (r5.group(2), r5.group(3), cost)
+                self.summary[r5.group(1)].append(data)
             else: 
                 print("* Warning line skipped: %s" % l.strip("\n"))
 
@@ -39,7 +42,7 @@ class OSPF(object):
 
     def generate_junos(self):
         commands = []
-        if self.version ==2:
+        if self.version == 2:
             protocol = "set protocols ospf"
             # Add some specific commands to OSPFv2
             commands.append("set protocols ospf no-rfc-1583")
@@ -53,7 +56,9 @@ class OSPF(object):
         for area in self.summary.keys():
             for item in self.summary[area]:
                 prefix,mask,cost = item.split(",")
-                mask = netmask2cidr(mask)
+                if self.version == 2:
+                    # IPv6 netmask is already in CIDR notation
+                    mask = netmask2cidr(mask)
                 commands.append("%s area %s area-range %s/%s override-metric %s exact" %   
                         (protocol, area, prefix, mask, cost))
         return (commands)

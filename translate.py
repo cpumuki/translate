@@ -204,10 +204,10 @@ def process_chunk(chunk):
     elif "snmp-server" in line:
         snmp = SNMP(chunk)
     elif "router ospf" in line:
-        ospf = OSPF(chunk, debug=1)
+        ospf = OSPF(chunk, debug=0)
         commands = ospf.generate_junos()
-        #for c in commands:
-        #    print(c)
+        for c in commands:
+            print(c)
 
 def is_ignored_command(line):
 
@@ -250,7 +250,7 @@ def is_one_to_one(line):
 if __name__ == "__main__":
 
     commands = []
-    input_file = "kk.conf"
+    input_file = "example2.conf"
     ignore_file = "ignore.json"
     interface_file = "interfaces.json"
 
