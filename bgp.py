@@ -38,7 +38,7 @@ class BGP(object):
             elif r8:
             	self.cluster = r8.group(1)
             elif r9:
-            	# weight not supported in junos
+            	# Weight not supported in junos
             	pass
             else:
                 print("* Warning line skipped in bgp: %s" % l.strip("\n"))
