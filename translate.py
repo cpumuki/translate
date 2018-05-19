@@ -213,6 +213,10 @@ def is_ignored_command(line):
             return True
     return False
 
+def process_line_config(line):
+
+    return True
+
 def process_chunk(chunk):
     line = chunk[0]
     if "vlan" in line:
@@ -228,20 +232,29 @@ def process_chunk(chunk):
         snmp = SNMP(chunk)
 
 #
+# ---------------------------------------------------
 # main
+# ---------------------------------------------------
 # 
 if __name__ == "__main__":
-    in_block = 0
 
     input_file = "example2.conf"
     ignore_file = "ignore.json"
+    interface_file = "interfaces.json"
 
-    # Read commands to be ignored
+    # Read interface mapping from vendor to vendor
+    with open(ignore_file) as f:
+        iface_map = json.load(f)
+
+    # Read commands to be ignored from JSON file
     with open(ignore_file) as f:
         ignored_commands = json.load(f)
 
+    in_block = 0
     commands = []
     with open(input_file) as f:
+
+        # Parse the router configuration
         for line in f:
 
             if is_ignored_command(line):
@@ -249,26 +262,32 @@ if __name__ == "__main__":
 
             if in_block == 0:
                 chunk = []
-                # Create object for the following group of commands till the !
+                # Create an object for the following group of commands till the exclamantion mark !
                 r1 = re.match("^(vlan|interface|snmp|router ospf|ipv6 router ospf|lag|router bgp|vrf|ntp).*", line)
                 # Print a warning for this statements
                 r2 = re.match("(ip access-list|ipv6 access-list|route-map|aaa authentication|aaa authorization|radius-server|clock) .*", line)
+                r3 = re.match("(lldp|test).*", line)
                 if r1:
                     in_block = 1
                     chunk.append(line)
                 elif r2:
                     in_block = 2
                     chunk.append(line)
+                elif r3:
+                    # Configuration given by a set of lines (no indentation)
+                    process_line_config(line)
                 else:
                     # One to One mapping for the following commands
                     print("* Warning global line skipped: %s" % line.strip("\n"))
             else:
                 if "!" in line:
                     if in_block == 1:
+                        # Create the objects based on the type of group
                         process_chunk(chunk)
                     elif in_block == 2:
-                        # These are commands we will not translate, just print a warning
+                        # These are commands will not be translated, just print a warning
                         print("* Convert the commands for: %s" % chunk[0].strip("\n"))
                     in_block=0
+                # Keep appending lines in the current group
                 chunk.append(line)
 
