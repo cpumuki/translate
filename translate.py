@@ -5,6 +5,7 @@ import sys
 import json
 
 from ospf import OSPF
+from bgp import BGP
 
 class VLAN(object):
     """ Creates a VLAN object """
@@ -153,17 +154,6 @@ class LAG(object):
     def __repr__(self):
         return "lag %s (primary %s) ports: %s"  % (self.lagid, self.primary, self.ports)
 
-class BGP(object):
-    def __init__(self,lines):
-        self.las = 0
-        for l in lines:
-            r1 = re.match("\s*local-as (\S+)",l)
-            if r1:
-                self.las = r1.group(1)
-            else:
-                # print("* Warning line skipped: %s" % l.strip("\n"))
-                pass
-
 class VRF(object):
     def __init__(self,lines):
         self.name = ""
@@ -206,6 +196,9 @@ def process_chunk(chunk):
     elif "router ospf" in line:
         ospf = OSPF(chunk, debug=0)
         commands = ospf.generate_junos()
+    elif "router bgp" in line:
+        bgp = BGP(chunk)
+        commands = bgp.generate_junos()
         for c in commands:
             print(c)
 
