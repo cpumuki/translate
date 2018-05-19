@@ -1,12 +1,8 @@
 
-## Convert input configuration files
-
+Convert input configuration files
 - Create objects for block of commands
 (ie: vlan, interface, ospf, bgp, lag...)
-
 - Set via json file one-to-one translation
-
 - Set via json file commands to be ignored
-
 - Set via jinja files commands with attributes
 (ie: hostname, router-id)
