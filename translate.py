@@ -4,6 +4,8 @@ import re
 import sys
 import json
 
+from ospf import OSPF
+
 class VLAN(object):
     """ Creates a VLAN object """
     def __init__(self, lines):
@@ -184,31 +186,11 @@ class NTP(object):
                 # print("* Warning line skipped: %s" % l.strip("\n"))
                 pass
 
-class OSPF(object):
-    def __init__(self,lines):
-        self.version = 2 # default version 2
-        self.graceful = 0
-        self.area = []
-        self.log = 0
-        for l in lines:
-            r1 = re.match("area (\S+)", l)
-            r2 = re.match("\s+graceful-restart", l)
-            r3 = re.match("\s+log adjacency", l)
-            if "ipv6 router ospf" in l:
-                self.version = 3
-            elif r1:
-                self.area.append(r1.group(1))
-            elif r2:
-                self.graceful = 1
-            elif r3:
-                self.log = 1
-            else: 
-                print("* Warning line skipped: %s" % l.strip("\n"))
-
 def process_line_config(line):
     return True
 
 def process_chunk(chunk):
+
     line = chunk[0]
     if "vlan" in line:
         vlan = VLAN(chunk)
@@ -221,8 +203,14 @@ def process_chunk(chunk):
         # print(iface)
     elif "snmp-server" in line:
         snmp = SNMP(chunk)
+    elif "router ospf" in line:
+        ospf = OSPF(chunk, debug=1)
+        commands = ospf.generate_junos()
+        #for c in commands:
+        #    print(c)
 
-def is_ignored_command(line):   
+def is_ignored_command(line):
+
     for ic in ignored_commands:
         # Ignore commands should be partial or full commands                
         if ic in line:
@@ -262,7 +250,7 @@ def is_one_to_one(line):
 if __name__ == "__main__":
 
     commands = []
-    input_file = "example2.conf"
+    input_file = "kk.conf"
     ignore_file = "ignore.json"
     interface_file = "interfaces.json"
 
