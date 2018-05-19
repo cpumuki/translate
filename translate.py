@@ -233,15 +233,13 @@ def is_one_to_one(line):
 
     r1 = re.match("hostname (\S+)", line)
     r2 = re.match("ip arp-age (\d+)", line)
-    r3 = re.match("no ip icmp redirects", line)
     r4 = re.match("ip dns domain-name (\S+)", line)
     r5 = re.match("username (\S+)( privilege (\d+)){0,1} password 8 .*", line)
+    r6 = re.match("logging host (\S+)", line)
     if r1:
         commands.append("set system host-name %s" % r1.group(1))
     elif r2:
         commands.append("set system arp aging-timer %s" % r2.group(1))
-    elif r3:
-        commands.append("set system no-redirects")
     elif r4:
         commands.append("set system domain-name %s" % r4.group(1))
     elif r5:
@@ -250,6 +248,8 @@ def is_one_to_one(line):
             commands.append("set system login user %s class super-user" % r5.group(1))        
         else:
             commands.append("set system login user %s class operator" % r5.group(1))        
+    elif r6:
+        commands.append("set system syslog host %s" % r6.group(1))
     else:
         return False
     return True
