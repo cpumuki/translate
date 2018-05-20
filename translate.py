@@ -164,7 +164,7 @@ def process_chunk(chunk):
         iface = INTERFACE(chunk)
         # print(iface)
     elif "lag" in line:
-        lag = LAG(chunk)
+        lag = LAG(chunk, iface_map)
         commands = lag.generate_junos()
         for c in commands:
             print(c)
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     interface_file = "interfaces.json"
 
     # Read interface mapping from vendor to vendor
-    with open(ignore_file) as f:
+    with open(interface_file) as f:
         iface_map = json.load(f)
 
     # Read commands to be ignored from JSON file
