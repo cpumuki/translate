@@ -158,13 +158,16 @@ def process_chunk(chunk):
     line = chunk[0]
     if "vlan" in line:
         vlan = VLAN(chunk)
-        # print(vlan)
     elif "interface ve" in line:
         ve = VE(chunk)
-        # print(ve)
     elif "interface ethernet" in line:
         iface = INTERFACE(chunk)
         # print(iface)
+    elif "lag" in line:
+        lag = LAG(chunk)
+        commands = lag.generate_junos()
+        for c in commands:
+            print(c)
     elif "snmp-server" in line:
         snmp = SNMP(chunk)
     elif "router ospf" in line:
@@ -173,8 +176,6 @@ def process_chunk(chunk):
     elif "router bgp" in line:
         bgp = BGP(chunk)
         commands = bgp.generate_junos()
-        for c in commands:
-            print(c)
 
 def is_ignored_command(line):
 
