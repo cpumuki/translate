@@ -7,7 +7,7 @@ import json
 from ospf import OSPF
 from bgp import BGP
 from lag import LAG
-
+from vlan import VLAN
 
 class VE(object):
     """ Create a VE object """
@@ -48,8 +48,7 @@ class VE(object):
             elif r8:
                 self.pim = 1
             else: 
-                # print("* Warning line skipped: %s" % l.strip("\n"))
-                pass
+                print("* Warning line skipped in VE: %s" % l.strip("\n"))
 
     def __repr__(self):
         return "ve %s (%s) ipaddress: %s" % (self.id, self.name, self.ipaddress)
