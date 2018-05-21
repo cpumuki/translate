@@ -37,7 +37,11 @@ def generate_junos(self):
 
         commands.append("set vlans %s" % self.name)
         commands.append("set vlans %s vlan-id %s" % (self.name, self.id))
+        commands.append("set vlans %s vlan-id %s" % (self.name, self.id))
 
-		# set interfaces ge-0/0/1 unit 0 family ethernet-switching vlan members employee-vlan
-		# FIXME
+        for p in self.ports:
+			# FIXME interface-type trunk|access
+			commands.append("set interfaces %s unit 0 family ethernet-switching vlan members %s" % 
+				(p, self.name))
+		
         return (commands)
