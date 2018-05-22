@@ -10,6 +10,8 @@ class VE(object):
         self.helper = []
         self.pim = 0
         self.mtu = 0
+        self.p2p = 0
+        self.p2p6 = 0
         self.ip6address = []
         self.mtu6 = 0
         self.ospf3 = dict()
@@ -22,6 +24,14 @@ class VE(object):
             r6 = re.match("\s+ipv6 address (\S+)", l)
             r7 = re.match("\s+ip helper-address (\S+)", l)
             r8 = re.match("\s+ip pim-sparse", l)
+            r9 = re.match("\s+ip ospf network point-to-point", l)
+            r10 = re.match("\s+ip mtu (\d+)", l)
+            r11 = re.match("\s+ipv6 enable", l)
+            r12 = re.match("\s+ipv6 mtu (\d+)", l)
+            r13 = re.match("\s+ipv6 ospf network point-to-point", l)
+            r14 = re.match("\s+ipv6 nd suppress-ra", l)
+            r15 = re.match("\s+bandwidth (\d+)", l)
+            r16 = re.match("\s+vrf forwarding (\S+)", l)
             if r1:
                 self.id = r1.group(1)
             elif r2:
@@ -38,6 +48,25 @@ class VE(object):
                 self.helper.append(r7.group(1))
             elif r8:
                 self.pim = 1
+            elif r9:
+                self.p2p = 1
+            elif r10:
+                self.mtu = r10.group(1)
+            elif r11:
+                pass
+            elif r12:
+                self.mtu = r12.group(1)
+            elif r13:
+                self.p2p6 = 1
+            elif r14:
+                # FIXME: is there anyting to do ?
+                pass
+            elif r15:
+                # Nothing to do with bandwidth
+                pass
+            elif r16:
+                # FIXME: No support for VRF for the time being
+                pass
             else: 
                 print("* Warning line skipped in VE: %s" % l.strip("\n"))
 

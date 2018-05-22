@@ -31,6 +31,12 @@
  "ip tcp burst-normal",
  "ip icmp burst-normal",
  "no ip source-route",
- "^C"
+ "^C",
+ "address-family vpnv4 unicast",
+ "address-family vpnv6 unicast",
+ "address-family l2vpn vpls",
+ "exit-address-family",
+ "address-family ipv4 multicast",
+ "address-family ipv6 multicast"
 ]
 
