@@ -1,0 +1,16 @@
+{
+"one-to-one": [
+  {
+    "extreme": "no icmp redirects",
+    "juniper": "set system no-redirects",
+  },
+  {
+    "extreme": "ip arp-age 15",
+    "juniper": "set system arp aging-timer 15",
+  },
+  {
+    "extreme": "telnet server",
+    "juniper": "set system services telnet",
+  },
+ ]
+}
