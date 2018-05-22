@@ -8,50 +8,7 @@ from ospf import OSPF
 from bgp import BGP
 from lag import LAG
 from vlan import VLAN
-
-class VE(object):
-    """ Create a VE object """
-    def __init__(self, lines):
-        self.id = 0
-        self.name = ""
-        self.ospf = dict()
-        self.ipaddress = []
-        self.helper = []
-        self.pim = 0
-        self.mtu = 0
-        self.ip6address = []
-        self.mtu6 = 0
-        self.ospf3 = dict()
-        for l in lines:
-            r1 = re.match("^interface ve (\d+)", l)
-            r2 = re.match("\s+port-name (.*)", l)
-            r3 = re.match("\s+ip ospf (area|cost|dead-interval|hello-interval) (\S+)", l)
-            r4 = re.match("\s+ipv6 ospf (area|cost|dead-interval|hello-interval) (\S+)", l)
-            r5 = re.match("\s+ip address (\S+)", l)
-            r6 = re.match("\s+ipv6 address (\S+)", l)
-            r7 = re.match("\s+ip helper-address (\S+)", l)
-            r8 = re.match("\s+ip pim-sparse", l)
-            if r1:
-                self.id = r1.group(1)
-            elif r2:
-                self.name = r2.group(1)
-            elif r3:
-                self.ospf[r3.group(1)] = r3.group(2)
-            elif r4:
-                self.ospf[r4.group(1)] = r4.group(2)
-            elif r5:
-                self.ipaddress.append(r5.group(1))
-            elif r6:
-                self.ip6address.append(r6.group(1))
-            elif r7:
-                self.helper.append(r7.group(1))
-            elif r8:
-                self.pim = 1
-            else: 
-                print("* Warning line skipped in VE: %s" % l.strip("\n"))
-
-    def __repr__(self):
-        return "ve %s (%s) ipaddress: %s" % (self.id, self.name, self.ipaddress)
+from ve import VE
 
 class INTERFACE(object):
     """ Creates a physical INTERFACE object """
@@ -208,19 +165,18 @@ if __name__ == "__main__":
             if is_ignored_command(line):
                 continue
 
+            # FIXME: Need to use the external file
             if is_one_to_one(line):
                 continue
 
             if in_block == 0:
-
                 if "!" in line:
                     continue
-
                 chunk = []
                 # Different type of parsing:
                 #   0) Commands to be ignored (is_ignored_command) above
                 #   1) Group of commands indented ended by '!'
-                #   2) Group of commands non-indented (multiple lines)
+                #   2) Group of commands non-indented (multiple lines) (ie: lldp)
                 #   3) Group of commands to be ignored by printing a warning message
                 #   4) Commands to be translated one by one (above)
                 r1 = re.match("^(vlan|interface|snmp|router ospf|ipv6 router ospf|lag|router bgp|vrf|ntp).*", line)
