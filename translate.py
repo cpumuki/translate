@@ -76,6 +76,18 @@ class NTP(object):
                 pass
 
 def process_line_config(line):
+
+    r1 = re.match("ip route (\S+)\/(\S+) null0", line)
+    r2 = re.match("ip route (\S+)\/(\S+) (\S+) distance (\d+)", line)
+    r3 = re.match("lldp enable.*", line)
+    if r1:
+        print("set routing-options static route %s/%s discard" % (r1.group(1), r1.group(2)))
+    elif r2:
+        print("set routing-options static route %s/%s next-hop %s" % (r2.group(1), r2.group(2), r2.group(3)))
+    elif r3:
+        # NOTE: lldp enabled all ports
+        print("set protocols lldp interface all")
+
     return True
 
 def process_chunk(chunk):
@@ -103,7 +115,6 @@ def process_chunk(chunk):
         commands = bgp.generate_junos()
 
 def is_ignored_command(line):
-
     for ic in ignored_commands:
         # Ignore commands should be partial or full commands                
         if ic in line:
@@ -137,14 +148,13 @@ def is_one_to_one(line):
 
 #
 # ---------------------------------------------------
-# main
+# Main
 # ---------------------------------------------------
 # 
 if __name__ == "__main__":
-
     commands = []
-    input_file = "example2.conf"
-    ignore_file = "ignore.json"
+    input_file     = "example2.conf"
+    ignore_file    = "ignore.json"
     interface_file = "interfaces.json"
 
     # Read interface mapping from vendor to vendor
@@ -164,7 +174,6 @@ if __name__ == "__main__":
 
             if is_ignored_command(line):
                 continue
-
             # FIXME: Need to use the external file
             if is_one_to_one(line):
                 continue
@@ -175,9 +184,9 @@ if __name__ == "__main__":
                 chunk = []
                 # Different type of parsing:
                 #   0) Commands to be ignored (is_ignored_command) above
-                #   1) Group of commands indented ended by '!'
-                #   2) Group of commands non-indented (multiple lines) (ie: lldp)
-                #   3) Group of commands to be ignored by printing a warning message
+                #   1) Group of commands indented ended by '!' (r1)
+                #   2) Group of commands non-indented (multiple lines) (ie: lldp) (r2)
+                #   3) Group of commands to be ignored by printing a warning message (r3)
                 #   4) Commands to be translated one by one (above)
                 r1 = re.match("^(vlan|interface|snmp|router ospf|ipv6 router ospf|lag|router bgp|vrf|ntp).*", line)
                 r2 = re.match("(lldp|ip route|ipv6 route|ip prefix-list|ipv6 prefix-list).*", line)
