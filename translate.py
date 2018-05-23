@@ -45,18 +45,49 @@ class NTP(object):
 
 def process_line_config(line):
 
+    commands = []
     r1 = re.match("ip route (\S+)\/(\S+) null0", line)
     r2 = re.match("ip route (\S+)\/(\S+) (\S+) distance (\d+)", line)
     r3 = re.match("lldp enable.*", line)
+    r4 = re.match("snmp-server contact (.*)", line)
+    r5 = re.match("snmp-server location (.*)", line)
+    r6 = re.match("snmp-server host (\S+) version v2c 2 (\S+)", line)
+    r7 = re.match("snmp-server community 2 (\S+) ro \"(\S+)\"", line)
+    r8 = re.match("snmp-server trap-source (\S+) (\d+)", line)
+    r10 = re.match("snmp-server", line)
+    r11 = re.match("snmp-server max-ifindex-per-module 64", line)
+    r12 = re.match("snmp-server preserve-statistics", line)
     if r1:
-        print("set routing-options static route %s/%s discard" % (r1.group(1), r1.group(2)))
+        commands.append("set routing-options static route %s/%s discard" % (r1.group(1), r1.group(2)))
     elif r2:
-        print("set routing-options static route %s/%s next-hop %s" % (r2.group(1), r2.group(2), r2.group(3)))
+        commands.append("set routing-options static route %s/%s next-hop %s preference %s" % (r2.group(1), r2.group(2), r2.group(3),r2.group(4)))
     elif r3:
         # NOTE: lldp enabled all ports
-        print("set protocols lldp interface all")
+        commands.append("set protocols lldp interface all")
+    elif r4:
+        commands.append("set snmp contact %s" % r4.group(1))
+    elif r5:
+        commands.append("set snmp location %s" % r5.group(1))
+    elif r6:
+        commands.append("set snmp trap-group HOSTS targets %s" % r6.group(1))
+        commands.append("set snmp trap-group HOSTS version v2")
+    elif r7:
+        # FIXME: Need to configure TrustedLineNets
+        print("* FIXME: You need to configure TrustedLineNets (client list or prefix list)")
+        print("* FIXME: You need to change the SNMP community (ie: public)")
+        commands.append("set snmp community public client-list-name TrustedLineNets")
+        print
+    elif r8:
+        # Ignore the interface configured and set lo0
+        commands.append("set snmp trap-options source-address lo0")
+    elif r10:
+        pass
+    elif r11:
+        pass
+    elif r12:
+        pass
 
-    return True
+    return commands
 
 def process_chunk(chunk):
 
@@ -157,11 +188,11 @@ if __name__ == "__main__":
                 # Different type of parsing:
                 #   0) Commands to be ignored (is_ignored_command) above
                 #   1) Group of commands indented ended by '!' (r1)
-                #   2) Group of commands non-indented (multiple lines) (ie: lldp) (r2)
+                #   2) Group of commands non-indented (multiple lines) (ie: lldp, snmp) (r2)
                 #   3) Group of commands to be ignored by printing a warning message (r3)
                 #   4) Commands to be translated one by one (above)
-                r1 = re.match("^(vlan|interface|snmp|router ospf|ipv6 router ospf|lag|router bgp|vrf|ntp).*", line)
-                r2 = re.match("(lldp|ip route|ipv6 route|ip prefix-list|ipv6 prefix-list).*", line)
+                r1 = re.match("^(vlan|interface|router ospf|ipv6 router ospf|lag|router bgp|vrf|ntp).*", line)
+                r2 = re.match("(lldp|snmp|ip route|ipv6 route|ip prefix-list|ipv6 prefix-list).*", line)
                 r3 = re.match("(ip access-list|ipv6 access-list|route-map|aaa authentication|aaa authorization|radius-server|clock) .*", line)
                 if r1:
                     in_block = 1
