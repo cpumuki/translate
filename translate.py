@@ -11,16 +11,6 @@ from vlan import VLAN
 from ve import VE
 from interface import INTERFACE
 
-class SNMP(object):
-    def __init__(self,lines):
-        self.comunity = "public"
-        self.location = "MYLOCATION"
-        self.hosts = []
-
-    def __repr__(self):
-        return "snmp community %s, location %s" % (self.community, self.location)
-
-
 class VRF(object):
     def __init__(self,lines):
         self.name = ""
