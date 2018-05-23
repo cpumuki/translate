@@ -12,6 +12,7 @@ class OSPF(object):
         self.log = 0
         for l in lines:
             if debug == 1: print("* ospf debug: %s" % l.strip("\n"))
+            r0 = re.match("(router ospf|\s+log-status-change)$", l)
             r1 = re.match("\s+area (\S+)$", l)
             r2 = re.match("\s+graceful-restart", l)
             r3 = re.match("\s+log adjacency", l)
@@ -34,6 +35,8 @@ class OSPF(object):
                 cost = r5.group(4)
                 data = "%s,%s,%s" % (r5.group(2), r5.group(3), cost)
                 self.summary[r5.group(1)].append(data)
+            elif r0:
+                pass
             else: 
                 print("* Warning line skipped in ospf: %s" % l.strip("\n"))
 

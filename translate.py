@@ -108,6 +108,7 @@ def is_one_to_one(line):
     r7 = re.match("ip dns server-address (\S+)+", line)
     r8 = re.match("telnet server", line)
     r9 = re.match("no ip icmp redirects", line)
+    r10 = re.match("telnet timeout (\d+)", line)
     if r1:
         commands.append("set system host-name %s" % r1.group(1))
     elif r2:
@@ -128,6 +129,9 @@ def is_one_to_one(line):
         commands.append("set system services telnet")
     elif r9:
         commands.append("set system no-redirects")
+    elif r10:
+        # FIXME: telnet logout needs to be configured in the login class (idle-timeout)
+        pass
     else:
         return False
     return True

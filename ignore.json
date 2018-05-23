@@ -37,6 +37,9 @@
  "address-family l2vpn vpls",
  "exit-address-family",
  "address-family ipv4 multicast",
- "address-family ipv6 multicast"
+ "address-family ipv6 multicast",
+ "ip multicast-routing",
+ "telnet login-retries",
+ "enable telnet authentication"
 ]
 
