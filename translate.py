@@ -35,7 +35,7 @@ def process_line_config(line):
     r8 = re.match("snmp-server trap-source (\S+) (\d+)", line)
     r10 = re.match("snmp-server", line)
     r11 = re.match("snmp-server max-ifindex-per-module 64", line)
-    r12 = re.match("snmp-server preserve-statistics", line)
+    r12 = re.match("snmp-server preserve-statistics", line)   
     if r1:
         commands.append("set routing-options static route %s/%s discard" % (r1.group(1), r1.group(2)))
     elif r2:
@@ -65,13 +65,14 @@ def process_line_config(line):
         pass
     elif r12:
         pass
-
     return commands
 
 def process_chunk(chunk):
     line = chunk[0]
+    commands = []
     if "vlan" in line:
-        vlan = VLAN(chunk)
+        vlan = VLAN(chunk, iface_map)
+        commands = vlan.generate_junos()
     elif "interface ve" in line:
         ve = VE(chunk)
     elif "interface ethernet" in line:
@@ -90,6 +91,7 @@ def process_chunk(chunk):
     elif "router bgp" in line:
         bgp = BGP(chunk)
         commands = bgp.generate_junos()
+    return commands
 
 def is_ignored_command(line):
     for ic in ignored_commands:
@@ -99,7 +101,7 @@ def is_ignored_command(line):
     return False
 
 def is_one_to_one(line):
-
+    commands = []
     r1 = re.match("hostname (\S+)", line)
     r2 = re.match("ip arp-age (\d+)", line)
     r4 = re.match("ip dns domain-name (\S+)", line)
@@ -132,15 +134,16 @@ def is_one_to_one(line):
     elif r10:
         # FIXME: telnet logout needs to be configured in the login class (idle-timeout)
         pass
-    else:
-        return False
-    return True
+    return commands
 
 #
 # ---------------------------------------------------
 # Main
 # ---------------------------------------------------
 # 
+# FIXME: No multicast support
+# FIXME: No VRF support
+
 if __name__ == "__main__":
     commands = []
     input_file     = "example.conf"
@@ -161,13 +164,10 @@ if __name__ == "__main__":
 
         # Parse the router configuration
         for line in f:
-
             if is_ignored_command(line):
                 continue
-            # FIXME: Need to use the external file
             if is_one_to_one(line):
                 continue
-
             if in_block == 0:
                 if "!" in line:
                     continue
@@ -189,7 +189,7 @@ if __name__ == "__main__":
                     chunk.append(line)
                 elif r2:
                     # Configuration given by a set of lines (no indentation)
-                    process_line_config(line)
+                    commands = commands + process_line_config(line)
                 else:
                     # One to One mapping for the following commands
                     print("* Warning global line skipped: %s" % line.strip("\n"))
@@ -197,11 +197,13 @@ if __name__ == "__main__":
                 if "!" in line:
                     if in_block == 1:
                         # Create the objects based on the type of group
-                        process_chunk(chunk)
+                        commands = commands + process_chunk(chunk)
                     elif in_block == 2:
-                        # These are commands will not be translated, just print a warning
+                        # These are commands not translated, just print a warning
                         print("* FIXME: Convert the commands for: %s" % chunk[0].strip("\n"))
                     in_block=0
                 # Keep appending lines in the current group
                 chunk.append(line)
 
+    for c in commands:
+        print(c)

@@ -40,6 +40,9 @@
  "address-family ipv6 multicast",
  "ip multicast-routing",
  "telnet login-retries",
- "enable telnet authentication"
+ "enable telnet authentication",
+ "ip tftp source-interface loopback 1",
+ "router pim",
+ "bsr-candidate"
 ]
 

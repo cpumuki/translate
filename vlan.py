@@ -2,8 +2,9 @@ import re
 
 class VLAN(object):
     """ Creates a VLAN object """
-    def __init__(self, lines):
+    def __init__(self, lines, iface_map):
         self.id = 0
+        self.iface_map   = iface_map
         self.name = ""
         self.l3iface = ""
         self.modes = []
@@ -32,16 +33,16 @@ class VLAN(object):
     def __repr__(self):
         return "vlan %s (%s) l3interface: %s" % (self.id, self.name, self.l3iface)
 
-def generate_junos(self):
+    def generate_junos(self):
         commands = []
 
         commands.append("set vlans %s" % self.name)
         commands.append("set vlans %s vlan-id %s" % (self.name, self.id))
-        commands.append("set vlans %s vlan-id %s" % (self.name, self.id))
-
         for p in self.ports:
-			# FIXME interface-type trunk|access
-			commands.append("set interfaces %s unit 0 family ethernet-switching vlan members %s" % 
-				(p, self.name))
-		
+            # FIXME interface-type trunk|access
+            iface = self.iface_map["eth " + p]
+            commands.append("set interfaces %s unit 0 family ethernet-switching vlan members %s" % 
+                (iface, self.name))
+
+        # FIXME: remove duplicates
         return (commands)
