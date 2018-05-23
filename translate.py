@@ -24,7 +24,6 @@ class VRF(object):
                 pass
 
 def process_line_config(line):
-
     commands = []
     r1 = re.match("ip route (\S+)\/(\S+) null0", line)
     r2 = re.match("ip route (\S+)\/(\S+) (\S+) distance (\d+)", line)
@@ -70,7 +69,6 @@ def process_line_config(line):
     return commands
 
 def process_chunk(chunk):
-
     line = chunk[0]
     if "vlan" in line:
         vlan = VLAN(chunk)
@@ -108,6 +106,8 @@ def is_one_to_one(line):
     r5 = re.match("username (\S+)( privilege (\d+)){0,1} password 8 .*", line)
     r6 = re.match("logging host (\S+)", line)
     r7 = re.match("ip dns server-address (\S+)+", line)
+    r8 = re.match("telnet server", line)
+    r9 = re.match("no ip icmp redirects", line)
     if r1:
         commands.append("set system host-name %s" % r1.group(1))
     elif r2:
@@ -123,8 +123,11 @@ def is_one_to_one(line):
     elif r6:
         commands.append("set system syslog host %s" % r6.group(1))
     elif r7:
-        # FIXME: Fix the correct junos statement
-        commands.append("set system domain-server %s" % r7.group(1))
+        commands.append("set system name-server %s" % r7.group(1))
+    elif r8:
+        commands.append("set system services telnet")
+    elif r9:
+        commands.append("set system no-redirects")
     else:
         return False
     return True
@@ -193,7 +196,7 @@ if __name__ == "__main__":
                         process_chunk(chunk)
                     elif in_block == 2:
                         # These are commands will not be translated, just print a warning
-                        print("* Convert the commands for: %s" % chunk[0].strip("\n"))
+                        print("* FIXME: Convert the commands for: %s" % chunk[0].strip("\n"))
                     in_block=0
                 # Keep appending lines in the current group
                 chunk.append(line)
