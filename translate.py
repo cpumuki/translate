@@ -10,6 +10,7 @@ from lag import LAG
 from vlan import VLAN
 from ve import VE
 from interface import INTERFACE
+from ntp import NTP
 
 class VRF(object):
     def __init__(self,lines):
@@ -18,17 +19,6 @@ class VRF(object):
             r1 = re.match("vrf (\S+)",l)
             if r1:
                 self.name = r1.group(1)
-            else:
-                # print("* Warning line skipped: %s" % l.strip("\n"))
-                pass
-
-class NTP(object):
-    def __init__(self,lines):
-        self.name = ""
-        for l in lines:
-            r1 = re.match("ntp",l)
-            if r1:
-                self.name = ""
             else:
                 # print("* Warning line skipped: %s" % l.strip("\n"))
                 pass
